@@ -1,5 +1,5 @@
 import os
-import csv
+import handTracking as ht
 import cv2
 import mediapipe as mp
 
@@ -54,8 +54,13 @@ def main():
     detector = handDetector()
     while True and cap.isOpened():
         success, img= cap.read()
+        success2, img2 = cap.read()
         if img is None:
             break
+        if img2 is None:
+            break
+        img2 = ht.sp_noise(img2, 0.05)
+        img2 = detector.findHands(img2)
         img = detector.findHands(img)
 
         if detector.results.multi_hand_landmarks == None:
@@ -70,6 +75,7 @@ def main():
             print(lmList2)
         
         cv2.imshow("Image",img)
+        cv2.imshow("Image2",img2)
         if cv2.waitKey(1) == ord('q'):
             break
         
