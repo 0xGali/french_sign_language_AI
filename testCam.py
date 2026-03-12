@@ -1,5 +1,5 @@
 import os
-import json
+import csv
 import cv2
 import mediapipe as mp
 
@@ -40,32 +40,29 @@ def lectureVideo():
     mapMot = {}
     compteur = 0
     for video in os.listdir(f"videos"):
-        listeMain = []
         print(video)
         if compteur == 20:
             break
-        cap = cv2.VideoCapture(f"videos/{video}")
-        detector = handDetector()
-        while True and cap.isOpened():
-            success, img= cap.read()
-            if img is None:
-                break
-            img = detector.findHands(img)
-            lmList = detector.findPosition(img)
-            listeMain.append(lmList)
-            cv2.imshow("Image",img)
-            if cv2.waitKey(1) == ord('q'):
-                break
-        video = video.split(".")[0]
-        mapMot.update({video:listeMain})
+        
         compteur += 1
     return mapMot
 
 def main():
-    mapMot = lectureVideo()
-    print(mapMot)
-    with open("coordonnees_mots.json", "w") as f:
-        json.dump(mapMot, f)
+    cap = cv2.VideoCapture("videos/cravate.webm")
+    cap.set(3, 640)
+    cap.set(4, 480)
+    detector = handDetector()
+    while True and cap.isOpened():
+        success, img= cap.read()
+        if img is None:
+            break
+        img = detector.findHands(img)
+        lmList = detector.findPosition(img)
+        print(lmList)
 
+        cv2.imshow("Image",img)
+        if cv2.waitKey(1) == ord('q'):
+            break
+        
 if __name__ == "__main__":
     main()
