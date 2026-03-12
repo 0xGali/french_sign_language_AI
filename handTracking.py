@@ -44,18 +44,18 @@ def sp_noise(image, prob):
     prob: Probabilité du bruit
     A utiliser entre 0.01 and 0.5 du bruit total (avec 0.05 étant bien)
     '''
-    output = np.zeros(image.shape,np.uint8)
+    imageModif = np.zeros(image.shape,np.uint8)
     thres = 1 - prob 
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
             rdn = random.random()
             if rdn < prob:
-                output[i][j] = 0
+                imageModif[i][j] = 0
             elif rdn > thres:
-                output[i][j] = 255
+                imageModif[i][j] = 255
             else:
-                output[i][j] = image[i][j]
-    return output
+                imageModif[i][j] = image[i][j]
+    return imageModif
 
 def lectureVideo():
     mapMot = {}
@@ -93,11 +93,52 @@ def lectureVideo():
         compteur += 1
     return mapMot
 
+def lectureVideoBruit():
+    mapMot = {}
+    compteur = 0
+    for video in os.listdir(f"videos"):
+        listeMain = []
+        print(video)
+        if compteur == 20:
+            break
+        cap = cv2.VideoCapture(f"videos/{video}")
+        detector = handDetector()
+        while True and cap.isOpened():
+            success, img= cap.read()
+            if img is None:
+                break
+            img = sp_noise(img, 0.05)
+            img = detector.findHands(img)
+            if detector.results.multi_hand_landmarks == None:
+                continue
+            elif len(detector.results.multi_hand_landmarks) == 1:
+                lmList = detector.findPosition(img,0)
+                print(lmList)
+                listeMain.append(lmList)
+            elif len(detector.results.multi_hand_landmarks) == 2:
+                lmList = detector.findPosition(img,0)
+                lmList2 = detector.findPosition(img,1)
+                print(lmList)
+                print(lmList2)
+                listeMain.append((lmList,lmList2))
+            
+            cv2.imshow("Image",img)
+            if cv2.waitKey(1) == ord('q'):
+                break
+        video = video.split(".")[0]
+        mapMot.update({video:listeMain})
+        compteur += 1
+    return mapMot
+
 def main():
     mapMot = lectureVideo()
+    mapMotBruit = lectureVideoBruit()
     print(mapMot)
+    print(mapMotBruit)
     with open("coordonnees_mots.json", "w") as f:
         json.dump(mapMot, f)
+        json.dump(mapMotBruit, f)
+    
 
 if __name__ == "__main__":
     main()
