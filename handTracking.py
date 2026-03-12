@@ -62,8 +62,7 @@ def lectureVideo():
                 lmList2 = detector.findPosition(img,1)
                 print(lmList)
                 print(lmList2)
-                listeMain.append(lmList)
-                listeMain.append(lmList2)
+                listeMain.append((lmList,lmList2))
             
             cv2.imshow("Image",img)
             if cv2.waitKey(1) == ord('q'):
