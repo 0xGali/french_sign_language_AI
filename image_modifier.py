@@ -7,7 +7,6 @@ import os
 import numpy as np
 import random
 
-
 directory = os.getcwd() # getting the current directory
 name_video = 'videos/coude.webm' # entering the name of the file to be read
 
@@ -15,10 +14,10 @@ name_video = 'videos/coude.webm' # entering the name of the file to be read
 # Creating a directory for the video frames named original_frames
 
 try:
-    if not os.path.exists('original_frames'):
-        os.makedirs('original_frames')
+    if not os.path.exists('tmp\\original_frames'):
+        os.makedirs('tmp\\original_frames')
 except OSError:
-    print("It was not possible to create the 'original_frames' directory")
+    print("It was not possible to create the 'tmp\\original_frames' directory")
     
 #creating a video instance
 cap = cv2.VideoCapture(directory + "\\" + str(name_video))
@@ -42,7 +41,7 @@ while (True):
     ret, frame = cap.read()
     
     if ret == True:
-        name = './original_frames/frame' + str(current_frame) + '.jpg'
+        name = './tmp/original_frames/frame' + str(current_frame) + '.jpg'
         print("Creating... " + name)
         
         cv2.imwrite(name,frame) # saving the image at the frame "current_frame"
@@ -61,14 +60,14 @@ print("Done!")
 
 # Creating a new directory for frames with filter
 try:
-    if not os.path.exists("directory_filter"):
-        os.makedirs("directory_filter")
+    if not os.path.exists("tmp\\directory_filter"):
+        os.makedirs("tmp\\directory_filter")
 except OSError:
     print("It was not possible to create the 'directory_filter' directory")
 
 # Make a FOR loop to apply the filter in each of the frames    
-for count in range(len(os.listdir(directory  + "\\original_frames"))):
-    filename = directory + "\\original_frames" + "\\frame" + str(count) + '.jpg'
+for count in range(len(os.listdir(directory  + "\\tmp\\original_frames"))):
+    filename = directory + "\\tmp\\original_frames" + "\\frame" + str(count) + '.jpg'
     img = cv2.imread(filename) # opening each frame, one at a time
     
     # Applying the filter
@@ -80,7 +79,7 @@ for count in range(len(os.listdir(directory  + "\\original_frames"))):
     carton = cv2.bitwise_and(color, color, mask = edges)
     
     # saving the frame with the filter
-    cv2.imwrite(directory + "\\directory_filter" + '\\image' + str(count) + '.jpg', carton)
+    cv2.imwrite(directory + "\\tmp\\directory_filter" + '\\image' + str(count) + '.jpg', carton)
     print("Creating... image" + str(count) + ".jpg" )
     
 cv2.destroyAllWindows()    
@@ -90,8 +89,8 @@ print("Done!")
 
 img_array = []
 
-for count in range(len(os.listdir(directory + "\\directory_filter"))):
-    filename = directory + "\\directory_filter" + "\\image" + str(count) + ".jpg"
+for count in range(len(os.listdir(directory + "\\tmp\\directory_filter"))):
+    filename = directory + "\\tmp\\directory_filter" + "\\image" + str(count) + ".jpg"
     img = cv2.imread(filename)
     height, width, layers = img.shape
     size = (width,height)
@@ -109,23 +108,23 @@ print("done!")
 # Creating security camera effect (Part one of two)
 # Creating a new directory for frames with cam security like landscape (part1)
 try:
-    if not os.path.exists("security_cam1"):
-        os.makedirs("security_cam1")
+    if not os.path.exists("tmp\\security_cam1"):
+        os.makedirs("tmp\\security_cam1")
 except OSError:
-    print("It was not possible to create the 'security_cam' directory")
+    print("It was not possible to create the '\\tmp\\security_cam' directory")
     
 # Transforming the color frames into black and white frames
 # Make a FOR loop to apply gray_scale in all frames    
-for count in range(len(os.listdir(directory + "\\directory_filter"))):
+for count in range(len(os.listdir(directory + "\\tmp\\directory_filter"))):
    
-    filename = directory + "\\directory_filter" + '\\image' + str(count) + '.jpg'
+    filename = directory + "\\tmp\\directory_filter" + '\\image' + str(count) + '.jpg'
     img = cv2.imread(filename) 
     
     # gray scale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # saving the frame with the gray scale
-    cv2.imwrite(directory + "\\security_cam1" + '\\image' + str(count) + '.jpg', gray)
+    cv2.imwrite(directory + "\\tmp\\security_cam1" + '\\image' + str(count) + '.jpg', gray)
     print("Creating... image" + str(count) + ".jpg" )
     
 cv2.destroyAllWindows() 
@@ -135,8 +134,8 @@ print("Done!")
 
 img_array = []
 
-for count in range(len(os.listdir(directory + "\\security_cam1"))):
-    filename = directory + "\\security_cam1" + "\\image" + str(count) + ".jpg"
+for count in range(len(os.listdir(directory + "\\tmp\\security_cam1"))):
+    filename = directory + "\\tmp\\security_cam1" + "\\image" + str(count) + ".jpg"
     img = cv2.imread(filename)
     height, width, layers = img.shape
     size = (width,height)
@@ -154,10 +153,10 @@ print("done!")
 ## Creating security camera effect (Part two of two)
 # adding security cam effect
 try:
-    if not os.path.exists("security_cam2"):
-        os.makedirs("security_cam2")
+    if not os.path.exists("tmp\\tmpsecurity_cam2"):
+        os.makedirs("tmp\\security_cam2")
 except OSError:
-    print("It was not possible to create the 'security_cam2' directory")
+    print("It was not possible to create the '\\tmp\\security_cam2' directory")
     
 # Creating some constants
 i = 0 # to use for each iteration
@@ -165,9 +164,9 @@ TIME = 21 # the firt second to be shown on the camera
 COLOR_LINE = (0,0,255) # the color used to add the security cam effect
 THICKNESS = 2 # the thickness of the lines
 
-for count in range(len(os.listdir(directory + "\\security_cam1"))):
+for count in range(len(os.listdir(directory + "\\tmp\\security_cam1"))):
 
-    filename = directory + "\\security_cam1" + '\\image' + str(count) + '.jpg'
+    filename = directory + "\\tmp\\security_cam1" + '\\image' + str(count) + '.jpg'
     img = cv2.imread(filename) 
     
     # image properties
@@ -208,7 +207,7 @@ for count in range(len(os.listdir(directory + "\\security_cam1"))):
     cv2.putText(img, label, (width-110,height-30),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
     
     # saving the frame with the security cam style
-    cv2.imwrite(directory + "\\security_cam2" + '\\image' + str(count) + '.jpg', img)
+    cv2.imwrite(directory + "\\tmp\\security_cam2" + '\\image' + str(count) + '.jpg', img)
     
     print("Creating... image" + str(count) + ".jpg" )
     
@@ -220,8 +219,8 @@ print("Done!")
 
 img_array = []
 
-for count in range(len(os.listdir(directory + "\\security_cam2"))):
-    filename = directory + "\\security_cam2" + "\\image" + str(count) + ".jpg"
+for count in range(len(os.listdir(directory + "\\tmp\\security_cam2"))):
+    filename = directory + "\\tmp\\security_cam2" + "\\image" + str(count) + ".jpg"
     img = cv2.imread(filename)
     height, width, layers = img.shape
     size = (width,height)
@@ -240,10 +239,10 @@ print("done!")
 # To simulate the defective effect, I'm going to use the Salt-and-Pepper noise
 
 try:
-    if not os.path.exists("defective"):
-        os.makedirs("defective")
+    if not os.path.exists("tmp\\defective"):
+        os.makedirs("tmp\\defective")
 except OSError:
-    print("It was not possible to create the 'defective' directory")
+    print("It was not possible to create the 'tmp\\defective' directory")
 
 # the function to add the Salt-and-Pepper noise (source: https://stackoverflow.com/a/27342545)    
 # this function takes 2 args: image, which is the image instance, and prob, which is the probability. 
@@ -270,36 +269,36 @@ def sp_noise(image,prob):
 
 # Here I'm going to add the effect in some range of frames. Just remember that every 30 frames is equal to 1 second
 
-for count in range(len(os.listdir(directory + "\\security_cam2"))):
-    filename = directory + "\\security_cam2" + '\\image' + str(count) + '.jpg'
+for count in range(len(os.listdir(directory + "\\tmp\\security_cam2"))):
+    filename = directory + "\\tmp\\security_cam2" + '\\image' + str(count) + '.jpg'
     img = cv2.imread(filename) 
     
     if count < 200:
         noise_img = sp_noise(img,0.0505)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
 
     elif count > 200 and count < 210:
         noise_img = sp_noise(img,0.01)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
         
     elif count > 350 and count < 410:
         noise_img = sp_noise(img,0.04)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
 
     elif count > 450 and count < 480:
         noise_img = sp_noise(img,0.35)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
 
     elif count > 610 and count < 670:
         noise_img = sp_noise(img,0.012)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
         
     elif count > 745:
         noise_img = sp_noise(img,0.5)
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', noise_img)
 
     else: # do not apply the Salt-and-Pepper effect
-        cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', img)
+        cv2.imwrite(directory + "\\tmp\\defective" + '\\image' + str(count) + '.jpg', img)
         
     print("Creating... image" + str(count) + ".jpg" )
     
@@ -311,8 +310,8 @@ print("Done!")
 
 img_array = []
 
-for count in range(len(os.listdir(directory + "\\defective"))):
-    filename = directory + "\\defective" + "\\image" + str(count) + ".jpg"
+for count in range(len(os.listdir(directory + "\\tmp\\defective"))):
+    filename = directory + "\\tmp\\defective" + "\\image" + str(count) + ".jpg"
     img = cv2.imread(filename)
     height, width, layers = img.shape
     size = (width,height)
