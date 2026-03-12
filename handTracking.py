@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 class handDetector():
-    def __init__(self,mode=False,maxHands=2,detectionCon=1,trackCon=1):
+    def __init__(self,mode=False,maxHands=2,detectionCon=0.5,trackCon=0.5):
         self.mode = mode
         self.maxHands = maxHands
         self.detectionCon = detectionCon
@@ -85,7 +85,7 @@ def lectureVideo():
                 print(lmList2)
                 listeMain.append((lmList,lmList2))
             
-            cv2.imshow("Image",img)
+            #cv2.imshow("Image",img)
             if cv2.waitKey(1) == ord('q'):
                 break
         video = video.split(".")[0]
@@ -107,7 +107,7 @@ def lectureVideoBruit():
             success, img= cap.read()
             if img is None:
                 break
-            img = sp_noise(img, 0.05)
+            img = sp_noise(img, 0.01)
             img = detector.findHands(img)
             if detector.results.multi_hand_landmarks == None:
                 continue
@@ -133,12 +133,11 @@ def lectureVideoBruit():
 def main():
     mapMot = lectureVideo()
     mapMotBruit = lectureVideoBruit()
+    mapFusion = {**mapMot, **mapMotBruit}   
     print(mapMot)
     print(mapMotBruit)
     with open("coordonnees_mots.json", "w") as f:
-        json.dump(mapMot, f)
-        json.dump(mapMotBruit, f)
-    
+        json.dump(mapFusion, f)
 
 if __name__ == "__main__":
     main()
