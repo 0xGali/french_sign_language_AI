@@ -37,13 +37,13 @@ class handDetector():
                     cv2.circle(img,(cx,cy),5,(255,0,0),cv2.FILLED)
         return lmList
 
-def lectureVideo(dossier):
+def lectureVideo():
     mapMot = {}
     compteur = 0
-    for video in os.listdir(f"videos/{dossier}"):
+    for video in os.listdir(f"videos"):
         if compteur == 20:
             break
-        cap = cv2.VideoCapture(f"videos/{dossier}/{video}")
+        cap = cv2.VideoCapture(f"videos/{video}")
         detector = handDetector()
         while True and cap.isOpened():
             success, img= cap.read()
@@ -61,7 +61,7 @@ def lectureVideo(dossier):
     return mapMot
 
 def main():
-    mapMot = lectureVideo("education-nationale")
+    mapMot = lectureVideo()
     print(mapMot)
 
 if __name__ == "__main__":
