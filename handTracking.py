@@ -1,8 +1,7 @@
 import os
-
+import csv
 import cv2
 import mediapipe as mp
-import time
 
 class handDetector():
     def __init__(self,mode=False,maxHands=2,detectionCon=0.5,trackCon=0.5):
@@ -41,6 +40,7 @@ def lectureVideo():
     mapMot = {}
     compteur = 0
     for video in os.listdir(f"videos"):
+        print(video)
         if compteur == 20:
             break
         cap = cv2.VideoCapture(f"videos/{video}")
@@ -62,7 +62,12 @@ def lectureVideo():
 
 def main():
     mapMot = lectureVideo()
+    csv_file = "coordonnees_mots.csv"
     print(mapMot)
-
+    with open(csv_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Mot", "Coordonnees"])
+        for mot, coordonnees in mapMot.items():
+            writer.writerow([mot, coordonnees])
 if __name__ == "__main__":
     main()
