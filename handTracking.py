@@ -51,8 +51,20 @@ def lectureVideo():
             if img is None:
                 break
             img = detector.findHands(img)
-            lmList = detector.findPosition(img)
-            listeMain.append(lmList)
+            if detector.results.multi_hand_landmarks == None:
+                continue
+            elif len(detector.results.multi_hand_landmarks) == 1:
+                lmList = detector.findPosition(img,0)
+                print(lmList)
+                listeMain.append(lmList)
+            elif len(detector.results.multi_hand_landmarks) == 2:
+                lmList = detector.findPosition(img,0)
+                lmList2 = detector.findPosition(img,1)
+                print(lmList)
+                print(lmList2)
+                listeMain.append(lmList)
+                listeMain.append(lmList2)
+            
             cv2.imshow("Image",img)
             if cv2.waitKey(1) == ord('q'):
                 break
