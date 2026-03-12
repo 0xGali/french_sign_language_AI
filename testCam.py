@@ -4,7 +4,7 @@ import cv2
 import mediapipe as mp
 
 class handDetector():
-    def __init__(self,mode=False,maxHands=2,detectionCon=1,trackCon=1):
+    def __init__(self,mode=False,maxHands=2,detectionCon=0.5,trackCon=0.5):
         self.mode = mode
         self.maxHands = maxHands
         self.detectionCon = detectionCon
@@ -48,7 +48,7 @@ def lectureVideo():
     return mapMot
 
 def main():
-    cap = cv2.VideoCapture("videos/cravate.webm")
+    cap = cv2.VideoCapture(0)
     cap.set(3, 640)
     cap.set(4, 480)
     detector = handDetector()
@@ -57,9 +57,18 @@ def main():
         if img is None:
             break
         img = detector.findHands(img)
-        lmList = detector.findPosition(img)
-        print(lmList)
 
+        if detector.results.multi_hand_landmarks == None:
+            continue
+        elif len(detector.results.multi_hand_landmarks) == 1:
+            lmList = detector.findPosition(img,0)
+            print(lmList)
+        elif len(detector.results.multi_hand_landmarks) == 2:
+            lmList = detector.findPosition(img,0)
+            lmList2 = detector.findPosition(img,1)
+            print(lmList)
+            print(lmList2)
+        
         cv2.imshow("Image",img)
         if cv2.waitKey(1) == ord('q'):
             break
