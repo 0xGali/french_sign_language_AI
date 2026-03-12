@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
-# In[1]:
-
 ## Simulating an defective security cam effect on a recorded video ##
 import cv2
 import os
@@ -11,15 +8,8 @@ import numpy as np
 import random
 
 
-# In[2]:
-
-
 directory = os.getcwd() # getting the current directory
 name_video = 'videos/coude.webm' # entering the name of the file to be read
-
-
-# In[3]:
-
 
 ## Step 1
 # Creating a directory for the video frames named original_frames
@@ -66,9 +56,6 @@ cv2.destroyAllWindows() # destroying the windows
 print("Done!")
 
 
-# In[4]:
-
-
 ## Step 2
 # Applying a filter to each frame
 
@@ -99,10 +86,6 @@ for count in range(len(os.listdir(directory  + "\\original_frames"))):
 cv2.destroyAllWindows()    
 print("Done!")    
 
-
-# In[5]:
-
-
 # Generating the video with the filter
 
 img_array = []
@@ -120,9 +103,6 @@ for i in range(len(img_array)):
     out.write(img_array[i])
 out.release() 
 print("done!")
-
-
-# In[6]:
 
 
 ## Step 3
@@ -151,10 +131,6 @@ for count in range(len(os.listdir(directory + "\\directory_filter"))):
 cv2.destroyAllWindows() 
 print("Done!")
 
-
-# In[7]:
-
-
 # generating the video with the gray_scale effect
 
 img_array = []
@@ -173,8 +149,6 @@ for i in range(len(img_array)):
 out.release() 
 print("done!")
 
-
-# In[8]:
 
 
 ## Creating security camera effect (Part two of two)
@@ -242,10 +216,7 @@ cv2.destroyAllWindows()
 print("Done!")
 
 
-# In[9]:
-
-
-# generating the video with the cam security effect
+# Generating the video with the cam security effect
 
 img_array = []
 
@@ -262,9 +233,6 @@ for i in range(len(img_array)):
     out.write(img_array[i])
 out.release() 
 print("done!")
-
-
-# In[10]:
 
 
 ## Step 4
@@ -306,11 +274,11 @@ for count in range(len(os.listdir(directory + "\\security_cam2"))):
     filename = directory + "\\security_cam2" + '\\image' + str(count) + '.jpg'
     img = cv2.imread(filename) 
     
-    if count < 35:
-        noise_img = sp_noise(img,0.0705)
+    if count < 200:
+        noise_img = sp_noise(img,0.0505)
         cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
 
-    elif count > 180 and count < 210:
+    elif count > 200 and count < 210:
         noise_img = sp_noise(img,0.01)
         cv2.imwrite(directory + "\\defective" + '\\image' + str(count) + '.jpg', noise_img)
         
@@ -339,10 +307,7 @@ cv2.destroyAllWindows()
 print("Done!")
 
 
-# In[11]:
-
-
-# generating the video with the Salt-and-Pepper effect
+# Generating the video with the Salt-and-Pepper effect
 
 img_array = []
 
@@ -359,10 +324,3 @@ for i in range(len(img_array)):
     out.write(img_array[i])
 out.release() 
 print("done!")
-
-
-# In[ ]:
-
-
-
-
