@@ -26,16 +26,18 @@ class handDetector():
                     self.mpDraw.draw_landmarks(img,handLms,self.mpHands.HAND_CONNECTIONS)
         return img
     
-    def findPosition(self,img, handNo=0,draw=True):
+    def findPosition(self,img, handNo=0,draw=True, w=1, h=1):
         lmList=[]
         if self.results.multi_hand_landmarks:
             myHand=self.results.multi_hand_landmarks[handNo]
             for id, lm in enumerate(myHand.landmark):
-                h, w, c=img.shape
-                cx, cy=int(lm.x*w),int(lm.y*h)
-                lmList.append([id,cx,cy])
+                cx, cy = int(lm.x * w), int(lm.y * h)
+                # Normalisation
+                cx_norm = lm.x
+                cy_norm = lm.y
+                lmList.append([id, cx_norm, cy_norm])
                 if draw:
-                    cv2.circle(img,(cx,cy),5,(255,0,0),cv2.FILLED)
+                    cv2.circle(img, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
         return lmList
 
 def sp_noise(image, prob):
@@ -66,6 +68,14 @@ def lectureVideo():
         print(video)
         cap = cv2.VideoCapture(f"videos/{video}")
         detector = handDetector()
+
+        #récupération de la taille de la video
+        success, first_frame = cap.read()
+        if success:
+            h, w, _ = first_frame.shape
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Revenir au début de la vidéo
+        else:
+            print(f"Impossible de lire la vidéo {video}")
 
         #La boucle continue tant que la vidéo est lancée
         while True and cap.isOpened():
@@ -113,6 +123,15 @@ def lectureVideoBruit():
         print(video)
         cap = cv2.VideoCapture(f"videos/{video}")
         detector = handDetector()
+
+         # Récupérer la taille de la vidéo
+        success, first_frame = cap.read()
+        if success:
+            h, w, _ = first_frame.shape
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Revenir au début
+        else:
+            print(f"Impossible de lire la vidéo {video}")
+            continue
 
         while True and cap.isOpened():
             success, img= cap.read()
