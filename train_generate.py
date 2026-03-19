@@ -7,8 +7,7 @@ import numpy as np
 
 def train():
     # Chargement dataset
-
-    dataset =
+    dataset = pd.read_json('coordonnees_mots.json')
 
     # Chargement LLM (modèle de base et modèle PEFT)
     model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-1.5B")
