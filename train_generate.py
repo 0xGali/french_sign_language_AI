@@ -22,42 +22,39 @@ def train():
     peft_model = get_peft_model(model, config)
 
     # Preprocessing
-
-    def tokenize_function(example):
+    # Pour chaque mot :
+    def tokenize_function(mot):
         start_prompt = 'A partir des coordonnées de mains (n° du point de la main, x, y) fournies, donne le mot associé en langue des signes française. Fournis dans ta réponse le mot uniquement. \n\n'
-        prompt = [start_prompt + input for input in example["mot"]]
-        example['input_ids'] = tokenizer(prompt, padding='max_length', truncation=True,
-                                         return_tensors='pt').input_ids
-        example['labels'] = tokenizer(example['summary'], padding='max_length', truncation=True,
-                                      return_tensors='pt').input_ids
+        prompt = [start_prompt + input for input in mot]
+        # Prompt
+        mot['input_ids'] = tokenizer(prompt, padding='max_length', truncation=True,
+                                     return_tensors='pt').input_ids
+        # Label : résultat à produite
+        mot['labels'] = tokenizer(mot['mot'], padding='max_length', truncation=True,
+                                  return_tensors='pt').input_ids
 
-        return example
+        return mot
 
-    # The Dataset actually contains 3 diff splits: train, validation, and test.
-    # The tokenize_function code is handling all data across all splits in batches
     tokenize_datasets = dataset.map(tokenize_function, batched=True)
-    tokenize_datasets = tokenize_datasets.remove_columns(['id', 'topic', 'dialogue',
-                                                          'summary'])
+    tokenize_datasets = tokenize_datasets.remove_columns(['mot', 'id', 'x', 'y'])
 
-
-    output_dir = f'./dialogue-summary-training-{str(int(time.time()))}'
-    ## this is we are again back to the hugging face trainer module
+    # Entraînement et sauvegarde
+    output_dir = f'./dialogue-summary-training-{str(int(time.time()))}' #logs
     peft_training_args = TrainingArguments(output_dir=output_dir,
                                            auto_find_batch_size=True,
                                            learning_rate=1e-3,
                                            num_train_epochs=1,
                                            logging_steps=1,
                                            max_steps=1,
-                                           report_to='none' ## can be wandb, but we are reporint to noe
+                                           report_to='none'
                                            )
 
-    ## this is same except we are using PEFT model instead of regular
     peft_trainer = Trainer(model=peft_model,
                            args=peft_training_args,
                            train_dataset=tokenize_datasets['train']
                            )
 
-    # Entraînement et sauvegarde
+
     peft_trainer.train()
 
     peft_model_path = './peft-dialogue-summary-checkpoint-local'
