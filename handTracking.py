@@ -97,7 +97,7 @@ def lectureVideo():
                 continue
             elif len(detector.results.multi_hand_landmarks) == 1:
                 lmList = detector.findPosition(img,0)
-                listeMain.append(lmList)
+                listeMain.append((lmList,[]))
             elif len(detector.results.multi_hand_landmarks) == 2:
                 lmList = detector.findPosition(img,0)
                 lmList2 = detector.findPosition(img,1)
@@ -149,7 +149,7 @@ def lectureVideoBruit():
                 continue
             elif len(detector.results.multi_hand_landmarks) == 1:
                 lmList = detector.findPosition(img,0)
-                listeMain.append(lmList)
+                listeMain.append((lmList,[]))
             elif len(detector.results.multi_hand_landmarks) == 2:
                 lmList = detector.findPosition(img,0)
                 lmList2 = detector.findPosition(img,1)
