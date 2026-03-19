@@ -1,93 +1,149 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, TrainingArguments, Trainer
-from peft import LoraConfig, get_peft_model
-import torch
-import time
-import pandas as pd
+import json
 import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import LabelEncoder
 
-def train():
-    # Chargement dataset
-    dataset = pd.read_json('coordonnees_mots.json')
+# -----------------------------
+# Config
+# -----------------------------
+MAX_FRAMES = 50
+FEATURES_PER_FRAME = 84
+BATCH_SIZE = 32
+HIDDEN_SIZE = 128
+NUM_EPOCHS = 10
+LEARNING_RATE = 0.001
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Chargement LLM (modèle de base et modèle PEFT)
-    model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-1.5B")
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B")
+# -----------------------------
+# Dataset
+# -----------------------------
+class SignLanguageDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = X.astype(np.float32)
+        self.y = y.astype(np.int64)
 
-    config = LoraConfig(
-        r=8,
-        lora_alpha=16,
-        target_modules=["q_proj","v_proj"],
-    )
+    def __len__(self):
+        return len(self.X)
 
-    peft_model = get_peft_model(model, config)
+    def __getitem__(self, idx):
+        return torch.tensor(self.X[idx]), torch.tensor(self.y[idx])
 
-    # Preprocessing
-    # Pour chaque mot :
-    def tokenize_function(mot):
-        start_prompt = 'A partir des coordonnées de mains (n° du point de la main, x, y) fournies, donne le mot associé en langue des signes française. Fournis dans ta réponse le mot uniquement. \n\n'
-        prompt = [start_prompt + input for input in mot]
-        # Prompt
-        mot['input_ids'] = tokenizer(prompt, padding='max_length', truncation=True,
-                                     return_tensors='pt').input_ids
-        # Label : résultat à produite
-        mot['labels'] = tokenizer(mot['mot'], padding='max_length', truncation=True,
-                                  return_tensors='pt').input_ids
+# -----------------------------
+# Preprocessing
+# -----------------------------
+def pad_sequence(seq, max_len=MAX_FRAMES):
+    if len(seq) > max_len:
+        return seq[:max_len]
+    pad = np.zeros((max_len - len(seq), seq.shape[1]))
+    return np.vstack([seq, pad])
 
-        return mot
+def tokenize_sequence(sequence, max_points=21):
+    frames = []
+    for frame in sequence:
+        features = []
+        if not isinstance(frame, list) or len(frame) < 2:
+            frame = [[], []]  # si frame mal formée
+        for hand in frame[:2]:  # seulement 2 mains
+            hand_points = []
+            for point in hand:
+                if isinstance(point, (list, tuple)) and len(point) >= 3:
+                    hand_points.append(point)
+            # pad pour avoir exactement max_points
+            while len(hand_points) < max_points:
+                hand_points.append([0,0.0,0.0])
+            hand_points = hand_points[:max_points]
+            for _, x, y in hand_points:
+                features.extend([x, y])
+        frames.append(features)
+    return np.array(frames)
 
-    tokenize_datasets = dataset.map(tokenize_function, batched=True)
-    tokenize_datasets = tokenize_datasets.remove_columns(['mot', 'id', 'x', 'y'])
+def load_data(json_path):
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-    # Entraînement et sauvegarde
-    output_dir = f'./dialogue-summary-training-{str(int(time.time()))}' #logs
-    peft_training_args = TrainingArguments(output_dir=output_dir,
-                                           auto_find_batch_size=True,
-                                           learning_rate=1e-3,
-                                           num_train_epochs=1,
-                                           logging_steps=1,
-                                           max_steps=1,
-                                           report_to='none'
-                                           )
+    X, y = [], []
+    for word, sequences in data.items():
+        for seq in sequences:
+            X.append(pad_sequence(tokenize_sequence(seq)))
+            y.append(word)
 
-    peft_trainer = Trainer(model=peft_model,
-                           args=peft_training_args,
-                           train_dataset=tokenize_datasets['train']
-                           )
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(y)
+    X = np.array(X)
+    y = np.array(y_encoded)
+    print(f"Dataset size: {len(X)}")
+    print(f"Classes: {list(le.classes_)}")
+    return X, y, le
 
+# -----------------------------
+# Model
+# -----------------------------
+class LSTMClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
+                            batch_first=True, bidirectional=True)
+        self.fc = nn.Linear(hidden_size * 2, num_classes)
 
-    peft_trainer.train()
+    def forward(self, x):
+        # x shape: (batch, seq_len, features)
+        out, _ = self.lstm(x)
+        out = out[:, -1, :]  # prendre la dernière sortie
+        out = self.fc(out)
+        return out
 
-    peft_model_path = './peft-dialogue-summary-checkpoint-local'
+# -----------------------------
+# Training
+# -----------------------------
+def train_model(json_path):
+    X, y, le = load_data(json_path)
+    dataset = SignLanguageDataset(X, y)
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    peft_trainer.model.save_pretrained(peft_model_path)
-    tokenizer.save_pretrained(peft_model_path)
+    model = LSTMClassifier(input_size=FEATURES_PER_FRAME,
+                           hidden_size=HIDDEN_SIZE,
+                           num_classes=len(le.classes_)).to(DEVICE)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-# Fonction qui génère depuis 
-def generate(input):
-    peft_model_base = AutoModelForCausalLM.from_pretrained('Qwen/Qwen2.5-1.5B')
-    tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen2.5-1.5B')
+    for epoch in range(NUM_EPOCHS):
+        model.train()
+        total_loss = 0
+        for batch_X, batch_y in loader:
+            batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
+            optimizer.zero_grad()
+            outputs = model(batch_X)
+            loss = criterion(outputs, batch_y)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        print(f"Epoch {epoch+1}/{NUM_EPOCHS} - Loss: {total_loss/len(loader):.4f}")
 
-    peft_model = PeftModel.from_pretrained(peft_model_base,
-                                           './peft-dialogue-summary-checkpoint-local',
-                                           torch_dtype=torch.bfloat16,
-                                           is_trainable=False) ## is_trainable mean just a forward pass jsut to get a sumamry
+    return model, le
 
+# -----------------------------
+# Prediction
+# -----------------------------
+def predict(model, le, sequence):
+    model.eval()
+    with torch.no_grad():
+        seq_padded = pad_sequence(tokenize_sequence(sequence))
+        input_tensor = torch.tensor(seq_padded, dtype=torch.float32).unsqueeze(0).to(DEVICE)
+        outputs = model(input_tensor)
+        pred_idx = torch.argmax(outputs, dim=1).item()
+        return le.inverse_transform([pred_idx])[0]
 
-    prompt = f"""
-    A partir des coordonnées de mains (n° du point de la main, x, y) fournies, 
-    donne le mot associé en langue des signes française. Fournis dans ta réponse le mot uniquement. \n
-
-    {input}
-    """
-
-    input_ids = tokenizer(prompt, return_tensors='pt').input_ids
-
-    peft_model_outputs = peft_model.generate(input_ids=input_ids, generation_config=GenerationConfig(max_new_tokens=200, num_beams=1))
-    return tokenizer.decode(peft_model_outputs[0], skip_special_tokens=True)
-
-def main():
-    train()
-    #generate()
-
+# -----------------------------
+# Exemple d'utilisation
+# -----------------------------
 if __name__ == "__main__":
-    main()
+    model, le = train_model("coordonnees_mots.json")
+
+    # Exemple de prédiction
+    sample_sequence = [[[ [0,0.5,0.5] for _ in range(21)], [ [0,0.5,0.5] for _ in range(21)] ]]  # shape (1 frame, 2 hands, 21 points)
+    word_pred = predict(model, le, sample_sequence)
+    print("Mot prédit:", word_pred)
+    torch.save(model.state_dict(), "sign_language_lstm.pth")
+    torch.save(le, "label_encoder.pkl")
